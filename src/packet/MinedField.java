@@ -1,123 +1,133 @@
 package packet;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Random;
 
-enum gameState{
+enum GameState {
     PLAYING,
     DEFEAT,
     WIN
 }
 
+class Cell {
+    private static final char CELL_EMPTY   = 'O';
+    private static final char CELL_BOMB    = 'X';
+    private static final char CELL_HIDDEN  = '*';
+    private static final char CELL_OPENED  = 'N';
+
+    static int openedCell = 0;
+
+    private int x, y;
+    private char status = CELL_EMPTY;
+
+    private boolean hasBomb = false;
+    boolean isExploded      = false;
+
+    @Override
+    public String toString() {
+        return Character.toString(status);
+    }
+
+    public String toStringHidden(){
+        return Character.toString(status == CELL_OPENED ? status : CELL_HIDDEN);
+    }
+
+    public Cell(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    private void setStatus(char status){
+        this.status = status;
+    }
+
+    public void plantBomb() {
+        hasBomb = true;
+        setStatus(CELL_BOMB);
+    }
+
+    public char getHiddenStatus(){
+        if (status == CELL_OPENED || (status == CELL_BOMB && isExploded)){
+            return status;
+        }
+        return CELL_HIDDEN;
+    }
+
+    public void openCell() {
+        if (!hasBomb){
+            setStatus(CELL_OPENED);
+        } else {
+            isExploded = true;
+        }
+        ++openedCell;
+    }
+}
+
 class MinedField {
-    private Random random = new Random();
+    private static final int ROWS = 5;
+    private static final int COLUMN = 5;
 
-    private char[][] field = new char[5][5];
+    private ArrayList<ArrayList<Cell>> field = new ArrayList<>();
 
-    private gameState state = gameState.PLAYING;
+    private GameState state = GameState.PLAYING;
 
-    private int plantedBombs = 0;
-    private int openedCells  = 0;
-    private int needToWinCell;
+    private int howNeedOpenCellsForWin;
 
     MinedField(final int maxOfBombs){
-        for (char[] value : field) {
-            Arrays.fill(value, 'O');
+        for (int j = 0; j < ROWS; j++){
+            ArrayList<Cell> cells = new ArrayList<>();
+            for (int i = 0; i < COLUMN; i++) {
+                Cell cell = new Cell(i, j);
+                cells.add(cell);
+            }
+            field.add(cells);
         }
 
+        int plantedBombs = 0;
         end:
-        for (int i = 0; i < 5; ++i) {
-            for (int j = 0; j < 5; ++j){
+        for (int i = 0; i < ROWS; ++i) {
+            for (int j = 0; j < COLUMN; ++j){
+                Random random = new Random();
                 boolean isBomb = random.nextBoolean();
                 if (isBomb){
                     ++plantedBombs;
-                    setBomb(i, j);
+                    field.get(i).get(j).plantBomb();
                 }
                 if (maxOfBombs == plantedBombs) break end;
             }
         }
-
-        needToWinCell = 25 - plantedBombs;
-    }
-
-    private void setCellStatus(int row, int column, char status){
-        field[row][column] = status;
-    }
-
-    private void setBomb(int row, int column) {
-        setCellStatus(row, column, '*');
-    }
-
-    void setBoom(int row, int column) {
-        setCellStatus(row, column, '⨂');
-        openedCells++;
-        checkForWin();
-    }
-
-    void setOpenCell(int row, int column) {
-        setCellStatus(row, column, 'N');
-        openedCells++;
-        checkForWin();
-    }
-
-    void setStatusDefeat() {
-        state = gameState.DEFEAT;
-    }
-
-    char getCell(int row, int column) {
-        return field[row][column];
-    }
-
-    int getPlantedBombs() {
-        return plantedBombs;
+        howNeedOpenCellsForWin = ROWS*COLUMN - plantedBombs;
     }
 
     void printOpenField() {
-        for (char[] chars : field) {
-            for (char aChar : chars) {
-                System.out.print(aChar);
-            }
-            System.out.println();
-        }
+        field.forEach(rows -> System.out.println(rows.toString()));
     }
 
-    //TODO выводит строки инверсивно. Надо выяснить почему
     void printHiddenField() {
-        for (char[] chars : field) {
-            for (char cell : chars) {
-                System.out.print(hiddenCell(cell));
+        for (ArrayList<Cell> cells : field){
+            System.out.print(' ');
+            for (Cell cell : cells){
+                System.out.print(cell.getHiddenStatus() + "  ");
             }
             System.out.println();
         }
     }
 
-    static private char hiddenCell(char openCell){
-        switch (openCell){
-            case 'N':
-                return('N');
-            case '⨂':
-                return('⨂');
-            default:
-                return('\u086B');
+    public boolean isPlaying() {
+        return state == GameState.PLAYING;
+    }
+
+    public boolean isDefeat() {
+        return state == GameState.DEFEAT;
+    }
+
+    public void openCell(int y, int x) {
+        Cell tempCell = field.get(y).get(x);
+        tempCell.openCell();
+        if (tempCell.isExploded){
+            state = GameState.DEFEAT;
+        } else if (Cell.openedCell == howNeedOpenCellsForWin){
+            state = GameState.WIN;
         }
-    }
-
-    boolean isContinueToPlay(){
-        return state == gameState.PLAYING;
-    }
-
-    private void checkForWin(){
-        if (needToWinCell == openedCells &&
-                isContinueToPlay()){
-            state = gameState.WIN;
-        }
-    }
-
-    boolean isWin() {
-       return state == gameState.WIN;
-    }
-
-    boolean isDefeat() {
-        return state == gameState.DEFEAT;
     }
 }
