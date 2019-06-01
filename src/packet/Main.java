@@ -10,24 +10,20 @@ public class Main {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         MinedField minedField = new MinedField(10);
 
-        //System.out.println("Кол-во бомб на поле: " + minedField.getPlantedBombs());
-
         //cheat
-        minedField.printOpenField();
+        minedField.getOpenField();
 
         int y;
         int x;
         while(minedField.isPlaying()) {
-            minedField.printHiddenField();
+            System.out.println(minedField.getView());
             System.out.print("Введите координату клетки:\n<строка> : ");
             y = Integer.parseInt(reader.readLine()) - 1;
             System.out.print("Введите координату клетки:\n<столбец> : ");
             x = Integer.parseInt(reader.readLine()) - 1;
             minedField.openCell(y,x);
         }
-        minedField.printOpenField();
-
-
+        minedField.getOpenField();
 
         System.out.println(minedField.isDefeat() ?
                 "Ты проиграл, братик, но это норма, игра - как жизнь, хуй угадаешь" :
