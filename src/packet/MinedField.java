@@ -1,5 +1,6 @@
 package packet;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -9,68 +10,28 @@ enum GameState {
     WIN
 }
 
-class Cell {
-    private static final char CELL_EMPTY   = 'O';
-    private static final char CELL_BOMB    = 'X';
-    private static final char CELL_HIDDEN  = '*';
-    private static final char CELL_OPENED  = 'N';
-
-    static int openedCell;
-    public int aroundBombs;
-
-    private char status = CELL_EMPTY;
-
-    private boolean hasBomb = false;
-    boolean isExploded      = false;
-
-    @Override
-    public String toString() {
-        return Character.toString(status);
-    }
-
-    private void setStatus(char status){
-        this.status = status;
-    }
-
-    String getView(){
-        return status == CELL_OPENED ? Integer.toString(aroundBombs) : Character.toString(CELL_HIDDEN);
-    }
-
-    public void plantBomb() {
-        hasBomb = true;
-        setStatus(CELL_BOMB);
-    }
-
-    public void openCell() {
-        if (!hasBomb){
-            setStatus(CELL_OPENED);
-        } else {
-            isExploded = true;
-        }
-        ++openedCell;
-    }
-
-    public boolean hasBomb() {
-        return hasBomb;
-    }
-}
-
+// TODO рефактор всего класса. Необходимо пересмотреть его архитектуру в целом
+//  после перехода на графику
 class MinedField {
     private static final int ROWS = 5;
     private static final int COLUMNS = 5;
 
-    private ArrayList<ArrayList<Cell>> field = new ArrayList<>();
+    static int howNeedOpenCellsForWin;
+    ArrayList<ArrayList<Cell>> field = new ArrayList<>();
 
-    private GameState state = GameState.PLAYING;
+    GameState state = GameState.PLAYING;
 
+    MinedField(final int maxOfBombs, JFrame frame, Sapper sapper){
+        Cell.minedField = this;
 
-    private int howNeedOpenCellsForWin;
-    MinedField(final int maxOfBombs){
         for (int j = 0; j < ROWS; j++){
             ArrayList<Cell> cells = new ArrayList<>();
             for (int i = 0; i < COLUMNS; i++) {
                 Cell cell = new Cell();
+                cell.setBounds(i*100, j*100, 100, 100);
+                cell.addActionListener(sapper);
                 cells.add(cell);
+                frame.getContentPane().add(cell);
             }
             field.add(cells);
         }
@@ -126,21 +87,21 @@ class MinedField {
         return hiddenField.toString();
     }
 
-    public boolean isPlaying() {
-        return state == GameState.PLAYING;
+    public boolean isWin() {
+        return state == GameState.WIN;
     }
 
-    public boolean isDefeat() {
-        return state == GameState.DEFEAT;
-    }
+//    public boolean isDefeat() {
+//        return state == GameState.DEFEAT;
+//    }
 
-    public void openCell(int y, int x) {
-        Cell tempCell = field.get(y).get(x);
-        tempCell.openCell();
-        if (tempCell.isExploded){
-            state = GameState.DEFEAT;
-        } else if (Cell.openedCell == howNeedOpenCellsForWin){
-            state = GameState.WIN;
-        }
-    }
+//    public void openCell(int y, int x) {
+//        Cell tempCell = field.get(y).get(x);
+//        tempCell.openCell();
+//        if (tempCell.isExploded){
+//            state = GameState.DEFEAT;
+//        } else if (Cell.openedCell == howNeedOpenCellsForWin){
+//            state = GameState.WIN;
+//        }
+//    }
 }
